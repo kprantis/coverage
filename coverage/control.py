@@ -183,6 +183,10 @@ class coverage(object):
         # Set the reporting precision.
         Numbers.set_precision(self.config.precision)
 
+        # Is it ok for no data to be collected?
+        self._warn_no_data = True
+        self._warn_unimported_source = True
+
         # When tearing down the coverage object, modules can become None.
         # Saving the modules as object attributes avoids problems, but it is
         # quite ad-hoc which modules need to be saved and which references
@@ -487,12 +491,13 @@ class coverage(object):
 
             # If there are still entries in the source_pkgs list, then we never
             # encountered those packages.
-            for pkg in self.source_pkgs:
-                self._warn("Module %s was never imported." % pkg)
+            if self._warn_unimported_source:
+                for pkg in self.source_pkgs:
+                    self._warn("Module %s was never imported." % pkg)
 
             # Find out if we got any data.
             summary = self.data.summary()
-            if not summary:
+            if not summary and self._warn_no_data:
                 self._warn("No data was collected.")
 
             # Find files that were never executed at all.
@@ -690,3 +695,5 @@ def process_startup():
             # Measuring coverage within coverage.py takes yet more trickery.
             cov.cover_dir = "Please measure coverage.py!"
         cov.start()
+        self._warn_no_data = False
+        self._warn_unimported_source = False
